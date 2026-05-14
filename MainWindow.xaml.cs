@@ -10,9 +10,9 @@ namespace EFT_Goodies
     {
         private DispatcherTimer gameLoopTimer = null!;
         LeechFPGA leech = null!;
-        private const string processName = "Sam3.exe";
-        private const string moduleName = "Sam3.exe";
-        
+        private const string processName = "EscapeFromTarkov.exe";
+        private const string moduleName = "GameAssembly.dll";
+
         public MainWindow()
         {
             InitializeComponent();

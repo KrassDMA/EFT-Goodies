@@ -41,7 +41,7 @@ namespace EFT_Goodies
                 process = vmm.Process(processName);
                 if (process != null)
                 {
-                    mw.LogLine("Found " + process.Name);
+                    mw.LogLine("Found " + processName);
                     // Get module base address
                     moduleBaseAddress = process.GetModuleBase(moduleName);
                     mw.LogLine(moduleName + " base address = " + moduleBaseAddress.ToString("X16"));
