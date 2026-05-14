@@ -8,54 +8,85 @@ namespace EFT_Goodies
 {
     public sealed partial class MainWindow : Window
     {
-        private DispatcherTimer gameLoopTimer = null!;
-        LeechFPGA leech = null!;
+        internal bool isProcessFound = false;
+        internal bool isModuleBassAddressFound = false;
+        private bool isMainWindowFirstActivation = true;
+        private readonly object logLockToken = new object();
+
         private const string processName = "EscapeFromTarkov.exe";
         private const string moduleName = "GameAssembly.dll";
+
+        private DispatcherTimer gameLoopTimer = null!;
+        private LeechFPGA gameAssemblyDllLeech = null!;
 
         public MainWindow()
         {
             InitializeComponent();
-            InitLogFile();
-            InitMainLoop();
-            this.Closed += MainWindow_Closed;
-            LogLine("EFT Goodies application started...");
+            this.Closed += MainWindow_Closed; 
+            this.Activated += MainWindow_Activated;
+        }
 
-            leech = new LeechFPGA(this, processName, moduleName);
+        private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
+        {
+            if (isMainWindowFirstActivation)
+            {
+                try
+                {
+                    isMainWindowFirstActivation = false;
+
+                    // Initialize log file. Rolls every day, Keeps only the last 7 days of logs
+                    Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File("logs/EFTG.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7).CreateLogger();
+                    LogLine("EFT Goodies application started...");
+
+                    // initialize the leech for the GameAssembly.dll
+                    gameAssemblyDllLeech = new LeechFPGA(this, processName, moduleName);
+
+                    // Initialize and start the main loop timer
+                    gameLoopTimer = new DispatcherTimer();
+                    gameLoopTimer.Interval = TimeSpan.FromMilliseconds(10);
+                    gameLoopTimer.Tick += MainLoopTick;
+                    gameLoopTimer.Start();
+
+                    LogLine("Waiting for " + processName);
+                }
+                catch (Exception ex)
+                {
+                    LogLine(ex.ToString());
+                }
+            }
         }
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
         {
             // PUT YOUR CLEANUP CODE HERE
             Log.CloseAndFlush();
-        }
-
-        private void InitMainLoop()
-        {
-            gameLoopTimer = new DispatcherTimer();
-            gameLoopTimer.Interval = TimeSpan.FromMilliseconds(10);
-            gameLoopTimer.Tick += MainLoopTick;
-            gameLoopTimer.Start();
-        }   
+        } 
 
         private void MainLoopTick(object? sender, object? e)
         {
             // PUT YOUR MAIN LOOP LOGIC HERE
 
-            
-        }
-
-        private void InitLogFile()
-        {
-            // Rolls every day, Keeps only the last 7 days of logs
-            Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File("logs/EFTG.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7).CreateLogger();
+            // Waiting for the process and module to be found before doing anything
+            if (!isProcessFound)
+            {
+                gameAssemblyDllLeech.getProcesss();
+                return;
+            }
+            if (!isModuleBassAddressFound)
+            {
+                gameAssemblyDllLeech.getModuleBaseAddress();
+                return;
+            }
         }
 
         public void LogLine(string message)
         {
-            UiConsoleText.Text += message + Environment.NewLine;
-            Log.Information(message);
-            ScrollTextBoxToBottom();
+            lock (logLockToken)
+            {
+                UiConsoleText.Text += message + Environment.NewLine;
+                Log.Information(message);
+                ScrollTextBoxToBottom();
+            }
         }
 
         private void ScrollTextBoxToBottom()

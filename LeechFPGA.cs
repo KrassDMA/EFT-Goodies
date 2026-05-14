@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Threading;
+using System.Threading.Tasks;
 using Vmmsharp;
 
 namespace EFT_Goodies
@@ -12,10 +12,11 @@ namespace EFT_Goodies
         private Vmm vmm = null!;
         private VmmProcess process = null!;
         private UInt64 moduleBaseAddress = 0;
+        private readonly object mwLockToken = new object();
 
-        internal LeechFPGA(MainWindow mw, string processName, string moduleName)
+        internal LeechFPGA(MainWindow mainWindow, string processName, string moduleName)
         {
-            this.mw = mw;
+            this.mw = mainWindow;
             this.processName = processName;
             this.moduleName = moduleName;
 
@@ -34,7 +35,10 @@ namespace EFT_Goodies
                 mw.LogLine("Failed to initialize LeechFPGA");
                 mw.LogLine(ex.ToString());
             }
-            
+        }
+
+        internal async Task getProcesss()
+        {
             try
             {
                 // Get process
@@ -42,20 +46,45 @@ namespace EFT_Goodies
                 if (process != null)
                 {
                     mw.LogLine("Found " + processName);
-                    // Get module base address
-                    moduleBaseAddress = process.GetModuleBase(moduleName);
-                    mw.LogLine(moduleName + " base address = " + moduleBaseAddress.ToString("X16"));
-                }
-                else
-                {
-                    throw new Exception("Failed to find " + processName);
+                    lock (mwLockToken)
+                    {
+                        mw.isProcessFound = true;
+                    }
+                    return;
                 }
             }
             catch (Exception ex)
             {
                 mw.LogLine(ex.ToString());
-                mw.LogLine("Please close this program, then start the game, then restart this program!");
-            }   
+                return;
+            }
+        }
+
+        internal async Task getModuleBaseAddress()
+        {
+            try
+            {
+                // Get module base address
+                moduleBaseAddress = process.GetModuleBase(moduleName);
+                if(moduleBaseAddress == 0)
+                {
+                    return;
+                }
+                else
+                {
+                    mw.LogLine(moduleName + " base address = " + moduleBaseAddress.ToString("X16"));
+                    lock (mwLockToken)
+                    {
+                        mw.isModuleBassAddressFound = true;
+                    }
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                mw.LogLine(ex.ToString());
+                return;
+            }
         }
 
         internal UInt64 getDMAAddress64(UInt64 relativeOffset, UInt64[] offsets)
@@ -133,11 +162,6 @@ namespace EFT_Goodies
                 return 0;
             }
         }
-
-        
-
-
-
 
     }
 }
