@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "EFT Goodies (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "EFT Goodies (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
