@@ -25,15 +25,23 @@ namespace EFT_Goodies
                 // Preload native libraries
                 LeechCore.LoadNativeLibrary(System.AppDomain.CurrentDomain.BaseDirectory);
                 Vmm.LoadNativeLibrary(System.AppDomain.CurrentDomain.BaseDirectory);
-                
+            }
+            catch
+            {
+                mw.LogLine("Failed to load native libraries, Check for missing DLLs leechcore.dll and vmm.dll.");
+                throw;
+            }
+
+            try
+            {
                 // Initialize a Vmm for FPGA card
                 vmm = new Vmm("-device", "fpga");
                 mw.LogLine("LeechFPGA initialized!");
             }
-            catch (Exception ex)
+            catch
             {
-                mw.LogLine("Failed to initialize LeechFPGA");
-                mw.LogLine(ex.ToString());
+                mw.LogLine("LeechFPGA initialization failed!");
+                throw;
             }
         }
 

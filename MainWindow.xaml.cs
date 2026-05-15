@@ -30,29 +30,31 @@ namespace EFT_Goodies
         {
             if (isMainWindowFirstActivation)
             {
+                isMainWindowFirstActivation = false;
+
                 try
                 {
-                    isMainWindowFirstActivation = false;
-
-                    // Initialize log file. Rolls every day, Keeps only the last 7 days of logs
-                    Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File("logs/EFTG.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7).CreateLogger();
-                    LogLine("EFT Goodies application started...");
-
                     // initialize the leech for the GameAssembly.dll
                     gameAssemblyDllLeech = new LeechFPGA(this, processName, moduleName);
-
-                    // Initialize and start the main loop timer
-                    gameLoopTimer = new DispatcherTimer();
-                    gameLoopTimer.Interval = TimeSpan.FromMilliseconds(10);
-                    gameLoopTimer.Tick += MainLoopTick;
-                    gameLoopTimer.Start();
-
-                    LogLine("Waiting for " + processName);
                 }
                 catch (Exception ex)
                 {
                     LogLine(ex.ToString());
+                    LogLine("Failed to initialize EFT Goodies application, Check DMA card configuration and restart!");
+                    return;
                 }
+
+                // Initialize log file. Rolls every day, Keeps only the last 7 days of logs
+                Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File("logs/EFTG.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7).CreateLogger();
+
+                // Initialize and start the main loop timer
+                gameLoopTimer = new DispatcherTimer();
+                gameLoopTimer.Interval = TimeSpan.FromMilliseconds(10);
+                gameLoopTimer.Tick += MainLoopTick;
+                gameLoopTimer.Start();
+
+                LogLine("EFT Goodies application started...");
+                LogLine("Waiting for " + processName);
             }
         }
 
@@ -114,14 +116,18 @@ namespace EFT_Goodies
     }
 }
 
-/*
-        private UInt32[] offsets = { 0x50, 0x20, 0x30, 0x450 };
-        private UInt32 healthAddr = 0;
-        private UInt32 healthvalue = 0;
-            healthAddr = leech.getDMAAddress32(0x00B92290, offsets);
-            healthAddr -= 0x10;
-            healthvalue = leech.getUInt32(healthAddr);
-            LogLine(healthAddr.ToString("X"));
-            LogLine(healthvalue.ToString());
+/* test code for Serious Sam 3
  
+ private const string processName = "Sam3.exe";
+ private const string moduleName = "Sam3.exe";
+ private UInt32[] offsets = { 0x50, 0x20, 0x30, 0x450 };
+ private UInt32 healthAddr = 0;
+ private UInt32 healthvalue = 0;
+ 
+ // in main loop
+ healthAddr = leech.getDMAAddress32(0x00B92290, offsets);
+ healthAddr -= 0x10;
+ healthvalue = leech.getUInt32(healthAddr);
+ LogLine(healthAddr.ToString("X"));
+ LogLine(healthvalue.ToString());
 */
