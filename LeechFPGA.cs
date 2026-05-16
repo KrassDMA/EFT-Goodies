@@ -40,7 +40,7 @@ namespace EFT_Goodies
             }
             catch
             {
-                mw.LogLine("LeechFPGA initialization failed!");
+                mw.LogLine("LeechFPGA initialization failed, check DMA card configuration and restart!");
                 throw;
             }
         }

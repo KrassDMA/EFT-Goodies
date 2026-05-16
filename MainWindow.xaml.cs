@@ -40,7 +40,7 @@ namespace EFT_Goodies
                 catch (Exception ex)
                 {
                     LogLine(ex.ToString());
-                    LogLine("Failed to initialize EFT Goodies application, Check DMA card configuration and restart!");
+                    LogLine("Failed to initialize EFT Goodies application!");
                     return;
                 }
 
